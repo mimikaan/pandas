@@ -1784,7 +1784,7 @@ class Series(base.IndexOpsMixin, generic.NDFrame):
         else:
             df = self._constructor_expanddim({name: self})
 
-        return df
+        return df.__finalize__(self)
 
     def to_sparse(self, kind="block", fill_value=None):
         """

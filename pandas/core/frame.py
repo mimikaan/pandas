@@ -5341,7 +5341,7 @@ class DataFrame(NDFrame):
             result = dispatch_fill_zeros(func, this.values, other.values, result)
             return self._constructor(
                 result, index=new_index, columns=new_columns, copy=False
-            )
+            ).__finalize__((self, other), method="combine_frame")
 
     def _combine_match_index(self, other, func, level=None):
         left, right = self.align(other, join="outer", axis=0, level=level, copy=False)
@@ -5365,7 +5365,9 @@ class DataFrame(NDFrame):
 
     def _combine_const(self, other, func):
         # scalar other or np.ndim(other) == 0
-        return ops.dispatch_to_series(self, other, func)
+        return ops.dispatch_to_series(self, other, func).__finalize__(
+            (self, other), method="combine_const"
+        )
 
     def combine(self, other, func, fill_value=None, overwrite=True):
         """

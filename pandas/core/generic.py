@@ -5213,6 +5213,12 @@ class NDFrame(PandasObject, SelectionMixin):
                 other.left.allows_duplicate_labels
                 and other.right.allows_duplicate_labels
             )
+        elif method in {"combine_const", "combine_frame"}:
+            assert isinstance(other, tuple)
+            self.allows_duplicate_labels = all(
+                getattr(x, "allows_duplicate_labels", True) for x in other
+            )
+
         return self
 
     def __getattr__(self, name):

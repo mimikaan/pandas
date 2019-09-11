@@ -101,14 +101,16 @@ def test_to_frame():
     assert s.to_frame().allows_duplicate_labels is False
 
 
-@pytest.mark.parametrize(
-    "func", [(operator.methodcaller("add", 1)), (operator.methodcaller("sub", 1))]
-)
+@pytest.mark.parametrize("func", ["add", "sub"])
 @pytest.mark.parametrize("frame", [False, True])
-def test_binops(func, frame):
+@pytest.mark.parametrize("other", [1, pd.Series([1, 2], name="A")])
+def test_binops(func, other, frame):
     df = pd.Series([1, 2], name="A", index=["a", "b"], allow_duplicate_labels=False)
     if frame:
         df = df.to_frame()
+    if isinstance(other, pd.Series) and frame:
+        other = other.to_frame()
+    func = operator.methodcaller(func, other)
     assert df.allows_duplicate_labels is False
     assert func(df).allows_duplicate_labels is False
 

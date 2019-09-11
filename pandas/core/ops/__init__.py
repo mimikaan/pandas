@@ -1002,9 +1002,6 @@ def _arith_method_FRAME(cls, op, special):
     def f(self, other, axis=default_axis, level=None, fill_value=None):
 
         other = _align_method_FRAME(self, other, axis)
-        import pdb
-
-        pdb.set_trace()
 
         if isinstance(other, ABCDataFrame):
             # Another DataFrame
