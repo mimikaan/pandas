@@ -174,7 +174,7 @@ class Series(base.IndexOpsMixin, generic.NDFrame):
         Copy input data.
     """
 
-    _metadata = ["name"]
+    _metadata = ["name", "allows_duplicate_labels"]
     _accessors = {"dt", "cat", "str", "sparse"}
     # tolist is not actually deprecated, just suppressed in the __dir__
     _deprecations = generic.NDFrame._deprecations | frozenset(
@@ -191,7 +191,14 @@ class Series(base.IndexOpsMixin, generic.NDFrame):
     # Constructors
 
     def __init__(
-        self, data=None, index=None, dtype=None, name=None, copy=False, fastpath=False
+        self,
+        data=None,
+        index=None,
+        dtype=None,
+        name=None,
+        copy=False,
+        allow_duplicate_labels=True,
+        fastpath=False,
     ):
 
         # we are called internally, so short-circuit
@@ -311,7 +318,9 @@ class Series(base.IndexOpsMixin, generic.NDFrame):
 
                 data = SingleBlockManager(data, index, fastpath=True)
 
-        generic.NDFrame.__init__(self, data, fastpath=True)
+        generic.NDFrame.__init__(
+            self, data, allow_duplicate_labels=allow_duplicate_labels, fastpath=True
+        )
 
         self.name = name
         self._set_axis(0, index, fastpath=True)

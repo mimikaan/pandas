@@ -168,7 +168,7 @@ class NDFrame(PandasObject, SelectionMixin):
     _deprecations = frozenset(
         ["as_blocks", "blocks", "is_copy"]
     )  # type: FrozenSet[str]
-    _metadata = []  # type: List[str]
+    _metadata = ["allows_duplicate_labels"]  # type: List[str]
     _is_copy = None
     _data = None  # type: BlockManager
 
@@ -181,6 +181,7 @@ class NDFrame(PandasObject, SelectionMixin):
         axes: Optional[List[Index]] = None,
         copy: bool = False,
         dtype: Optional[Dtype] = None,
+        allow_duplicate_labels: bool = True,
         fastpath: bool = False,
     ):
 
@@ -197,6 +198,10 @@ class NDFrame(PandasObject, SelectionMixin):
         object.__setattr__(self, "_is_copy", None)
         object.__setattr__(self, "_data", data)
         object.__setattr__(self, "_item_cache", {})
+        object.__setattr__(self, "_allows_duplicate_labels", allow_duplicate_labels)
+
+        if not self.allows_duplicate_labels:
+            self._maybe_check_duplicate_labels()
 
     def _init_mgr(self, mgr, axes=None, dtype=None, copy=False):
         """ passed a manager and a axes dict """
@@ -216,6 +221,25 @@ class NDFrame(PandasObject, SelectionMixin):
         return mgr
 
     # ----------------------------------------------------------------------
+
+    @property
+    def allows_duplicate_labels(self):
+        """
+        Whether this object allows duplicate labels.
+        """
+        return self._allows_duplicate_labels
+
+    @allows_duplicate_labels.setter
+    def allows_duplicate_labels(self, value):
+        value = bool(value)
+        if not value:
+            self._maybe_check_duplicate_labels(force=True)
+        self._allows_duplicate_labels = value
+
+    def _maybe_check_duplicate_labels(self, force=False):
+        if force or not self.allows_duplicate_labels:
+            for ax in self.axes:
+                ax._maybe_check_unique()
 
     @property
     def is_copy(self):
@@ -5172,9 +5196,23 @@ class NDFrame(PandasObject, SelectionMixin):
             types of propagation actions based on this
 
         """
+        from pandas.core.reshape.concat import _Concatenator
+        from pandas.core.reshape.merge import _MergeOperation
+
         if isinstance(other, NDFrame):
             for name in self._metadata:
                 object.__setattr__(self, name, getattr(other, name, None))
+        elif method == "concat":
+            assert isinstance(other, _Concatenator)
+            self.allows_duplicate_labels = all(
+                x.allows_duplicate_labels for x in other.objs
+            )
+        elif method == "merge":
+            assert isinstance(other, _MergeOperation)
+            self.allows_duplicate_labels = (
+                other.left.allows_duplicate_labels
+                and other.right.allows_duplicate_labels
+            )
         return self
 
     def __getattr__(self, name):
@@ -9926,7 +9964,7 @@ class NDFrame(PandasObject, SelectionMixin):
         2    6   30  -30
         3    7   40  -50
         """
-        return np.abs(self)
+        return np.abs(self).__finalize__(self)
 
     def describe(self, percentiles=None, include=None, exclude=None):
         """

@@ -386,7 +386,15 @@ class DataFrame(NDFrame):
     # ----------------------------------------------------------------------
     # Constructors
 
-    def __init__(self, data=None, index=None, columns=None, dtype=None, copy=False):
+    def __init__(
+        self,
+        data=None,
+        index=None,
+        columns=None,
+        dtype=None,
+        copy=False,
+        allow_duplicate_labels=True,
+    ):
         if data is None:
             data = {}
         if dtype is not None:
@@ -476,7 +484,9 @@ class DataFrame(NDFrame):
             else:
                 raise ValueError("DataFrame constructor not properly called!")
 
-        NDFrame.__init__(self, mgr, fastpath=True)
+        NDFrame.__init__(
+            self, mgr, fastpath=True, allow_duplicate_labels=allow_duplicate_labels
+        )
 
     # ----------------------------------------------------------------------
 
