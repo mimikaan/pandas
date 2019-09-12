@@ -7,6 +7,9 @@ import pandas.errors
 
 import pandas as pd
 
+# ----------------------------------------------------------------------------
+# Preservation
+
 
 @pytest.mark.parametrize(
     "cls, data",
@@ -23,34 +26,6 @@ def test_construction_ok(cls, data):
 
     result = cls(data, allow_duplicate_labels=False)
     assert result.allows_duplicate_labels is False
-
-
-@pytest.mark.parametrize(
-    "cls, axes",
-    [
-        (pd.Series, {"index": ["a", "a"]}),
-        (pd.DataFrame, {"index": ["a", "a"]}),
-        (pd.DataFrame, {"index": ["a", "a"], "columns": ["b", "b"]}),
-        (pd.DataFrame, {"columns": ["b", "b"]}),
-    ],
-)
-def test_construction_with_duplicates(cls, axes):
-    result = cls(**axes)
-    assert result._allows_duplicate_labels is True
-
-    with pytest.raises(pandas.errors.DuplicateLabelError):
-        cls(**axes, allow_duplicate_labels=False)
-
-
-@pytest.mark.parametrize(
-    "data",
-    [pd.Series(index=[0, 0]), pd.DataFrame(index=[0, 0]), pd.DataFrame(columns=[0, 0])],
-)
-def test_setting_allows_duplicate_labels_raises(data):
-    with pytest.raises(pandas.errors.DuplicateLabelError):
-        data.allows_duplicate_labels = False
-
-    assert data.allows_duplicate_labels is True
 
 
 @pytest.mark.parametrize(
@@ -72,20 +47,12 @@ def test_preserved_series(func):
 @pytest.mark.parametrize(
     "other", [pd.Series(0, index=["a", "b", "c"]), pd.Series(0, index=["a", "b"])]
 )
+# TODO: frame
 def test_align(other):
     s = pd.Series([0, 1], index=["a", "b"], allow_duplicate_labels=False)
     a, b = s.align(other)
     assert a.allows_duplicate_labels is False
     assert b.allows_duplicate_labels is False
-
-
-@pytest.mark.parametrize(
-    "func", [operator.methodcaller("append", pd.Series(0, index=["a", "b"]))]
-)
-def test_series_raises(func):
-    s = pd.Series([0, 1], index=["a", "b"], allow_duplicate_labels=False)
-    with pytest.raises(pandas.errors.DuplicateLabelError):
-        func(s)
 
 
 def test_preserved_frame():
@@ -123,50 +90,6 @@ def test_preserve_getitem():
     assert df.loc[0].allows_duplicate_labels is False
     assert df.loc[[0]].allows_duplicate_labels is False
     assert df.loc[0, ["A"]].allows_duplicate_labels is False
-
-
-@pytest.mark.parametrize(
-    "getter, target",
-    [
-        (operator.itemgetter(["A", "A"]), None),
-        # loc
-        (operator.itemgetter(["a", "a"]), "loc"),
-        pytest.param(
-            operator.itemgetter(("a", ["A", "A"])),
-            "loc",
-            marks=pytest.mark.xfail(reason="TODO"),
-        ),
-        pytest.param(
-            operator.itemgetter((["a", "a"], "A")),
-            "loc",
-            marks=pytest.mark.xfail(reason="TODO"),
-        ),
-        # iloc
-        (operator.itemgetter([0, 0]), "iloc"),
-        pytest.param(
-            operator.itemgetter((0, [0, 0])),
-            "iloc",
-            marks=pytest.mark.xfail(reason="TODO"),
-        ),
-        pytest.param(
-            operator.itemgetter(([0, 0], 0)),
-            "iloc",
-            marks=pytest.mark.xfail(reason="TODO"),
-        ),
-    ],
-)
-def test_getitem_raises(getter, target):
-    df = pd.DataFrame(
-        {"A": [1, 2], "B": [3, 4]}, index=["a", "b"], allow_duplicate_labels=False
-    )
-    if target:
-        # df, df.loc, or df.iloc
-        target = getattr(df, target)
-    else:
-        target = df
-
-    with pytest.raises(pandas.errors.DuplicateLabelError):
-        getter(target)
 
 
 @pytest.mark.parametrize(
@@ -276,6 +199,91 @@ def test_concat(objs, kwargs):
 def test_merge(left, right, kwargs, expected):
     result = pd.merge(left, right, **kwargs)
     assert result.allows_duplicate_labels is expected
+
+
+# ----------------------------------------------------------------------------
+# Raises
+
+
+@pytest.mark.parametrize(
+    "cls, axes",
+    [
+        (pd.Series, {"index": ["a", "a"]}),
+        (pd.DataFrame, {"index": ["a", "a"]}),
+        (pd.DataFrame, {"index": ["a", "a"], "columns": ["b", "b"]}),
+        (pd.DataFrame, {"columns": ["b", "b"]}),
+    ],
+)
+def test_construction_with_duplicates(cls, axes):
+    result = cls(**axes)
+    assert result._allows_duplicate_labels is True
+
+    with pytest.raises(pandas.errors.DuplicateLabelError):
+        cls(**axes, allow_duplicate_labels=False)
+
+
+@pytest.mark.parametrize(
+    "data",
+    [pd.Series(index=[0, 0]), pd.DataFrame(index=[0, 0]), pd.DataFrame(columns=[0, 0])],
+)
+def test_setting_allows_duplicate_labels_raises(data):
+    with pytest.raises(pandas.errors.DuplicateLabelError):
+        data.allows_duplicate_labels = False
+
+    assert data.allows_duplicate_labels is True
+
+
+@pytest.mark.parametrize(
+    "func", [operator.methodcaller("append", pd.Series(0, index=["a", "b"]))]
+)
+def test_series_raises(func):
+    s = pd.Series([0, 1], index=["a", "b"], allow_duplicate_labels=False)
+    with pytest.raises(pandas.errors.DuplicateLabelError):
+        func(s)
+
+
+@pytest.mark.parametrize(
+    "getter, target",
+    [
+        (operator.itemgetter(["A", "A"]), None),
+        # loc
+        (operator.itemgetter(["a", "a"]), "loc"),
+        pytest.param(
+            operator.itemgetter(("a", ["A", "A"])),
+            "loc",
+            marks=pytest.mark.xfail(reason="TODO"),
+        ),
+        pytest.param(
+            operator.itemgetter((["a", "a"], "A")),
+            "loc",
+            marks=pytest.mark.xfail(reason="TODO"),
+        ),
+        # iloc
+        (operator.itemgetter([0, 0]), "iloc"),
+        pytest.param(
+            operator.itemgetter((0, [0, 0])),
+            "iloc",
+            marks=pytest.mark.xfail(reason="TODO"),
+        ),
+        pytest.param(
+            operator.itemgetter(([0, 0], 0)),
+            "iloc",
+            marks=pytest.mark.xfail(reason="TODO"),
+        ),
+    ],
+)
+def test_getitem_raises(getter, target):
+    df = pd.DataFrame(
+        {"A": [1, 2], "B": [3, 4]}, index=["a", "b"], allow_duplicate_labels=False
+    )
+    if target:
+        # df, df.loc, or df.iloc
+        target = getattr(df, target)
+    else:
+        target = df
+
+    with pytest.raises(pandas.errors.DuplicateLabelError):
+        getter(target)
 
 
 @pytest.mark.parametrize(
