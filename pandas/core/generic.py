@@ -3593,11 +3593,13 @@ class NDFrame(PandasObject, SelectionMixin):
                 index=self.columns,
                 name=self.index[loc],
                 dtype=new_values.dtype,
-            )
+            ).__finalize__(self, method="xs")
 
         else:
             result = self.iloc[loc]
             result.index = new_index
+            # TODO: ensure test for this branch
+            result.__finalize__(self)
 
         # this could be a view
         # but only in a single-dtyped view sliceable case
@@ -3616,6 +3618,13 @@ class NDFrame(PandasObject, SelectionMixin):
         if res is None:
             values = self._data.get(item)
             res = self._box_item_values(item, values)
+            if isinstance(res, NDFrame):
+                # TODO: this caching may cause issues. e.g.
+                # >>> df = pd.DataFrame({"A": [0]}, allows_duplicate_labels=False)
+                # >>> df['A']
+                # >>> df.allows_duplicate_labels = True
+                # >>> df['A']
+                res.__finalize__(self)
             cache[item] = res
             res._set_as_cached(item, self)
 
@@ -5199,25 +5208,28 @@ class NDFrame(PandasObject, SelectionMixin):
         from pandas.core.reshape.concat import _Concatenator
         from pandas.core.reshape.merge import _MergeOperation
 
+        def merge_all(objs, name, default=True):
+            return all(getattr(x, name, default) for x in objs)
+
+        duplicate_labels = "allows_duplicate_labels"
+
         if isinstance(other, NDFrame):
             for name in self._metadata:
                 object.__setattr__(self, name, getattr(other, name, None))
         elif method == "concat":
             assert isinstance(other, _Concatenator)
-            self.allows_duplicate_labels = all(
-                x.allows_duplicate_labels for x in other.objs
-            )
+            self.allows_duplicate_labels = merge_all(other.objs, duplicate_labels)
         elif method == "merge":
             assert isinstance(other, _MergeOperation)
-            self.allows_duplicate_labels = (
-                other.left.allows_duplicate_labels
-                and other.right.allows_duplicate_labels
+            self.allows_duplicate_labels = merge_all(
+                (other.left, other.right), duplicate_labels
             )
         elif method in {"combine_const", "combine_frame"}:
             assert isinstance(other, tuple)
-            self.allows_duplicate_labels = all(
-                getattr(x, "allows_duplicate_labels", True) for x in other
-            )
+            self.allows_duplicate_labels = merge_all(other, duplicate_labels)
+        elif method == "align_series":
+            assert isinstance(other, tuple)
+            self.allows_duplicate_labels = merge_all(other, duplicate_labels)
 
         return self
 
@@ -9006,7 +9018,11 @@ class NDFrame(PandasObject, SelectionMixin):
                         left.index = join_index
                         right.index = join_index
 
-        return left.__finalize__(self), right.__finalize__(other)
+        # TODO: Determine the expected behavior here. Should these affect eachother?
+        return (
+            left.__finalize__((self, other), method="align_series"),
+            right.__finalize__((other, self), method="align_series"),
+        )
 
     def _where(
         self,

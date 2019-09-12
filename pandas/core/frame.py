@@ -2813,7 +2813,7 @@ class DataFrame(NDFrame):
                 index=self.columns,
                 name=self.index[i],
                 dtype=new_values.dtype,
-            )
+            ).__finalize__(self, method="ixs")
             result._set_is_copy(self, copy=copy)
             return result
 
@@ -2891,6 +2891,8 @@ class DataFrame(NDFrame):
             if data.shape[1] == 1 and not isinstance(self.columns, ABCMultiIndex):
                 data = data[key]
 
+        if isinstance(data, NDFrame):
+            data.__finalize__(self, method="dataframe_getitem")
         return data
 
     def _getitem_bool_array(self, key):

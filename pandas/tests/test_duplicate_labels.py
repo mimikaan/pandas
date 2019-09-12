@@ -82,7 +82,6 @@ def test_binops(func, other, frame):
     assert func(df).allows_duplicate_labels is False
 
 
-@pytest.mark.xfail(reason="TODO")
 def test_preserve_getitem():
     df = pd.DataFrame({"A": [1, 2]}, allow_duplicate_labels=False)
     assert df[["A"]].allows_duplicate_labels is False
@@ -90,6 +89,16 @@ def test_preserve_getitem():
     assert df.loc[0].allows_duplicate_labels is False
     assert df.loc[[0]].allows_duplicate_labels is False
     assert df.loc[0, ["A"]].allows_duplicate_labels is False
+
+
+@pytest.mark.xfail(resason="Unclear behavior.")
+def test_ndframe_getitem_caching_issue():
+    # NDFrame.__getitem__ will cache the first df['A']. May need to
+    # invalidate that cache? Update the cached entries?
+    df = pd.DataFrame({"A": [0]}, allow_duplicate_labels=False)
+    assert df["A"].allows_duplicate_labels is False
+    df.allows_duplicate_labels = True
+    assert df["A"].allows_duplicate_labels is True
 
 
 @pytest.mark.parametrize(
@@ -248,28 +257,12 @@ def test_series_raises(func):
         (operator.itemgetter(["A", "A"]), None),
         # loc
         (operator.itemgetter(["a", "a"]), "loc"),
-        pytest.param(
-            operator.itemgetter(("a", ["A", "A"])),
-            "loc",
-            marks=pytest.mark.xfail(reason="TODO"),
-        ),
-        pytest.param(
-            operator.itemgetter((["a", "a"], "A")),
-            "loc",
-            marks=pytest.mark.xfail(reason="TODO"),
-        ),
+        (operator.itemgetter(("a", ["A", "A"])), "loc"),
+        (operator.itemgetter((["a", "a"], "A")), "loc"),
         # iloc
         (operator.itemgetter([0, 0]), "iloc"),
-        pytest.param(
-            operator.itemgetter((0, [0, 0])),
-            "iloc",
-            marks=pytest.mark.xfail(reason="TODO"),
-        ),
-        pytest.param(
-            operator.itemgetter(([0, 0], 0)),
-            "iloc",
-            marks=pytest.mark.xfail(reason="TODO"),
-        ),
+        (operator.itemgetter((0, [0, 0])), "iloc"),
+        (operator.itemgetter(([0, 0], 0)), "iloc"),
     ],
 )
 def test_getitem_raises(getter, target):
