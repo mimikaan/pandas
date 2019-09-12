@@ -104,6 +104,8 @@ with the same label.
 
    df2.groupby(level=0).mean()
 
+.. _duplicates.disallow:
+
 Disallowing Duplicate Labels
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

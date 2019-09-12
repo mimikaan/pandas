@@ -172,6 +172,12 @@ class Series(base.IndexOpsMixin, generic.NDFrame):
         See the :ref:`user guide <basics.dtypes>` for more usages.
     copy : bool, default False
         Copy input data.
+    allow_duplicate_labels : bool, default True
+        Whether to allow duplicate labels in this Series. By default,
+        duplicte labels are permitted. Setting this to ``False`` will
+        cause an :class:`errors.DuplicateLabelError` to be raised when
+        `index` is not unique, or any subsequent operation on this Series
+        introduces duplicates. See :ref:`duplictes.disallow` for more.
     """
 
     _metadata = ["name", "allows_duplicate_labels"]
