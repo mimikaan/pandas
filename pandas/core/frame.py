@@ -2809,6 +2809,8 @@ class DataFrame(NDFrame):
         If slice passed, the resulting data will be a view.
         """
         # irow
+        # TODO: Figure out if this is the right place to finalize.
+        #   Does it make sense to do here, or higher-level (like `LocationIndexer`)?
         if axis == 0:
             label = self.index[i]
             new_values = self._data.fast_xs(i)
@@ -2837,6 +2839,8 @@ class DataFrame(NDFrame):
             if len(self.index) and not len(values):
                 values = np.array([np.nan] * len(self.index), dtype=object)
             result = self._box_col_values(values, label)
+            if isinstance(result, NDFrame):
+                result.__finalize__(self, method="ixs")
 
             # this is a cached value, mark it so
             result._set_as_cached(label, self)
