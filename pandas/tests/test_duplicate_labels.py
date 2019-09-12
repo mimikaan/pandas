@@ -61,6 +61,7 @@ def test_setting_allows_duplicate_labels_raises(data):
         operator.methodcaller("rename", str.upper),
         operator.methodcaller("rename", "name"),
         operator.methodcaller("abs"),
+        # TODO: test np.abs
     ],
 )
 def test_preserved_series(func):
