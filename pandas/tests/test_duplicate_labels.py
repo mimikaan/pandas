@@ -68,7 +68,6 @@ def test_preserved_series(func):
     assert func(s).allows_duplicate_labels is False
 
 
-@pytest.mark.xfail(reason="Unclear what should happen to RHS")
 @pytest.mark.parametrize(
     "other", [pd.Series(0, index=["a", "b", "c"]), pd.Series(0, index=["a", "b"])]
 )
