@@ -5230,6 +5230,8 @@ class NDFrame(PandasObject, SelectionMixin):
         elif method == "align_series":
             assert isinstance(other, tuple)
             self.allows_duplicate_labels = merge_all(other, duplicate_labels)
+        elif method in {"groupby-aggregate", "window"}:
+            self.allows_duplicate_labels = other.obj.allows_duplicate_labels
 
         return self
 

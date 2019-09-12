@@ -11,7 +11,7 @@ import pandas as pd
 # Preservation
 
 
-class TestPreserved:
+class TestPreserves:
     @pytest.mark.parametrize(
         "cls, data",
         [
@@ -206,6 +206,31 @@ class TestPreserved:
     def test_merge(self, left, right, kwargs, expected):
         result = pd.merge(left, right, **kwargs)
         assert result.allows_duplicate_labels is expected
+
+    def test_groupby(self):
+        # XXX: This is under tested
+        # TODO:
+        #  - apply
+        #  - transform
+        #  - Should passing a grouper that disallows duplicates propagate?
+        #    i.e. df.groupby(pd.Series([0, 1], allows_duplicate_labels=False))?
+        df = pd.DataFrame({"A": [1, 2, 3]}, allow_duplicate_labels=False)
+        result = df.groupby([0, 0, 1]).agg("count")
+        assert result.allows_duplicate_labels is False
+
+    @pytest.mark.parametrize("frame", [True, False])
+    def test_window(self, frame):
+        df = pd.Series(
+            1,
+            index=pd.date_range("2000", periods=12),
+            name="A",
+            allow_duplicate_labels=False,
+        )
+        if frame:
+            df = df.to_frame()
+        assert df.rolling(3).mean().allows_duplicate_labels is False
+        assert df.ewm(3).mean().allows_duplicate_labels is False
+        assert df.expanding(3).mean().allows_duplicate_labels is False
 
 
 # ----------------------------------------------------------------------------

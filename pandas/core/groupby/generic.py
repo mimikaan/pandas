@@ -235,7 +235,7 @@ class NDFrameGroupBy(GroupBy):
 
         result, how = self._aggregate(func, _level=_level, *args, **kwargs)
         if how is None:
-            return result
+            return result.__finalize__(self, method="groupby-aggregate")
 
         if result is None:
 
@@ -274,7 +274,7 @@ class NDFrameGroupBy(GroupBy):
             result = result.iloc[:, order]
             result.columns = columns
 
-        return result._convert(datetime=True)
+        return result._convert(datetime=True).__finalize__(method="groupby-aggregate")
 
     agg = aggregate
 
