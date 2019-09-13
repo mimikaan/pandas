@@ -230,16 +230,13 @@ class NDFrame(PandasObject, SelectionMixin):
         return self._allows_duplicate_labels
 
     @allows_duplicate_labels.setter
-    def allows_duplicate_labels(self, value):
+    def allows_duplicate_labels(self, value: bool):
         value = bool(value)
         if not value:
-            self._maybe_check_duplicate_labels(force=True)
-        self._allows_duplicate_labels = value
-
-    def _maybe_check_duplicate_labels(self, force=False):
-        if force or not self.allows_duplicate_labels:
             for ax in self.axes:
                 ax._maybe_check_unique()
+
+        self._allows_duplicate_labels = value
 
     @property
     def is_copy(self):
