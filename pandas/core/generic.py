@@ -5209,7 +5209,10 @@ class NDFrame(PandasObject, SelectionMixin):
 
         if isinstance(other, NDFrame):
             for name in self._metadata:
-                object.__setattr__(self, name, getattr(other, name, None))
+                if hasattr(other, name):
+                    # require hasattr to avoid overwriting a valid Series.name
+                    # with a getattr(DataFrame, 'name', None)
+                    object.__setattr__(self, name, getattr(other, name, None))
         elif method == "concat":
             assert isinstance(other, _Concatenator)
             self.allows_duplicate_labels = merge_all(other.objs, duplicate_labels)
