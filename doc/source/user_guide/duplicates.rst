@@ -8,7 +8,7 @@ Duplicate Labels
 or column labels. This may be a bit confusing at first. If you're familiar with
 SQL, you know that row labels are similar to a primary key on a table, and you
 would never want duplicates in a SQL table. But one of pandas' roles is to clean
-mess, real-world data before it goes to some downstream system. And real-world
+messy, real-world data before it goes to some downstream system. And real-world
 data has duplicates, even in fields that are supposed to be unique.
 
 This section describes how duplicate labels change the behavior of certain

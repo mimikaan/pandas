@@ -198,10 +198,7 @@ class NDFrame(PandasObject, SelectionMixin):
         object.__setattr__(self, "_is_copy", None)
         object.__setattr__(self, "_data", data)
         object.__setattr__(self, "_item_cache", {})
-        object.__setattr__(self, "_allows_duplicate_labels", allow_duplicate_labels)
-
-        if not self.allows_duplicate_labels:
-            self._maybe_check_duplicate_labels()
+        object.__setattr__(self, "allows_duplicate_labels", allow_duplicate_labels)
 
     def _init_mgr(self, mgr, axes=None, dtype=None, copy=False):
         """ passed a manager and a axes dict """
