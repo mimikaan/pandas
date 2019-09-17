@@ -159,6 +159,7 @@ class NDFrame(PandasObject, SelectionMixin):
         "_default_kind",
         "_default_fill_value",
         "_metadata",
+        "_allows_duplicate_labels",
         "__array_struct__",
         "__array_interface__",
     ]  # type: List[str]
@@ -5203,8 +5204,14 @@ class NDFrame(PandasObject, SelectionMixin):
         def merge_all(objs, name, default=True):
             return all(getattr(x, name, default) for x in objs)
 
+        def finalize_name(objs):
+            names = {x.name for x in objs if x.name is not None}
+            if len(names) == 1:
+                return list(names)[0]
+
         duplicate_labels = "allows_duplicate_labels"
 
+        # import pdb; pdb.set_trace()
         if isinstance(other, NDFrame):
             for name in self._metadata:
                 if hasattr(other, name):
@@ -5225,6 +5232,7 @@ class NDFrame(PandasObject, SelectionMixin):
         elif method == "align_series":
             assert isinstance(other, tuple)
             self.allows_duplicate_labels = merge_all(other, duplicate_labels)
+            self.name = finalize_name(other)
         elif method in {"groupby-aggregate", "window"}:
             self.allows_duplicate_labels = other.obj.allows_duplicate_labels
 
