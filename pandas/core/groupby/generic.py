@@ -274,7 +274,9 @@ class NDFrameGroupBy(GroupBy):
             result = result.iloc[:, order]
             result.columns = columns
 
-        return result._convert(datetime=True).__finalize__(method="groupby-aggregate")
+        return result._convert(datetime=True).__finalize__(
+            self, method="groupby-aggregate"
+        )
 
     agg = aggregate
 

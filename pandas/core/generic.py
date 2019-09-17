@@ -5232,7 +5232,9 @@ class NDFrame(PandasObject, SelectionMixin):
         elif method == "align_series":
             assert isinstance(other, tuple)
             self.allows_duplicate_labels = merge_all(other, duplicate_labels)
-            self.name = finalize_name(other)
+            if self.ndim == 1:
+                # apparently called with DataFrame too
+                self.name = other[0].name
         elif method in {"groupby-aggregate", "window"}:
             self.allows_duplicate_labels = other.obj.allows_duplicate_labels
 
