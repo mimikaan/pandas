@@ -5214,9 +5214,11 @@ class NDFrame(PandasObject, SelectionMixin):
         # import pdb; pdb.set_trace()
         if isinstance(other, NDFrame):
             for name in self._metadata:
-                if hasattr(other, name):
-                    # require hasattr to avoid overwriting a valid Series.name
-                    # with a getattr(DataFrame, 'name', None)
+                if name == "name" and getattr(other, "ndim", None) == 1:
+                    # Calling hasattr(other, 'name') is bad for DataFrames with
+                    # a name column.
+                    object.__setattr__(self, name, getattr(other, name, None))
+                elif name != "name":
                     object.__setattr__(self, name, getattr(other, name, None))
         elif method == "concat":
             assert isinstance(other, _Concatenator)
